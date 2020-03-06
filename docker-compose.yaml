@@ -1,0 +1,93 @@
+version: '2'
+services:
+  es01:
+    image: elasticsearch:7.2.1
+    container_name: es01
+    environment:
+      - node.name=es01
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02,es03
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - /home/linhaih/work/es/es01/data:/usr/share/elasticsearch/data
+      - /home/linhaih/work/es/es01/logs:/usr/share/elasticsearch/logs
+    mem_limit: 1g
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+  es02:
+    image: elasticsearch:7.2.1
+    container_name: es02
+    environment:
+      - node.name=es02
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02,es03
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - /home/linhaih/work/es/es02/data:/usr/share/elasticsearch/data
+      - /home/linhaih/work/es/es02/logs:/usr/share/elasticsearch/logs
+    mem_limit: 1g
+    depends_on:
+      - es01
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - esnet
+    ports:
+      - 9201:9200
+  es03:
+    image: elasticsearch:7.2.1
+    container_name: es03
+    environment:
+      - node.name=es03
+      - discovery.seed_hosts=es01
+      - cluster.initial_master_nodes=es01,es02,es03
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    volumes:
+      - /home/linhaih/work/es/es03/data:/usr/share/elasticsearch/data
+      - /home/linhaih/work/es/es03/logs:/usr/share/elasticsearch/logs
+    mem_limit: 1g
+    depends_on:
+      - es02
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    networks:
+      - esnet
+    ports:
+      - 9202:9200
+  kibana:
+    image: kibana:7.2.1
+    volumes:
+      - ./kibana.yml:/usr/share/kibana/config/kibana.yml
+    depends_on:
+      - es01
+    networks:
+      - esnet
+    ports:
+      - 5601:5601
+    mem_limit: 1g
+  cerobore:
+    image: lmenezes/cerebro
+    ports:
+      - 9000:9000
+    mem_limit: 1g
+    networks:
+      - esnet
+networks:
+  esnet:
+    driver: bridge
